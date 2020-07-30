@@ -1,9 +1,25 @@
+var cluster = require("cluster");
 const fetch = require("node-fetch");
 const path = require("path");
 const tasks_dir = path.join(__dirname, "tasks");
-const url_update_status_task = "https://192.168.1.130:3000/pgapi/task/update_status";
+const url_update_status_task =
+  "https://192.168.1.130:3000/pgapi/task/update_status";
 const url_get_tasks = "https://192.168.1.130:3000/pgapi/task/list";
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0; // Para que pase el certificado cuando no es válido
+
+// Este bloque permite convertir un error a String con JSON.stringify
+var config = {
+  configurable: true,
+  value: function () {
+    var alt = {};
+    var storeKey = function (key) {
+      alt[key] = this[key];
+    };
+    Object.getOwnPropertyNames(this).forEach(storeKey, this);
+    return alt;
+  },
+};
+Object.defineProperty(Error.prototype, "toJSON", config);
 
 //-- Open Monitoring System Task --//
 // Este bloque inicial carga los archivos de tareas de forma automática
@@ -22,33 +38,48 @@ console.log("Open Monitoring System Task");
 setInterval(async () => {
   // Consulta por las tareas que ya deben ejecutarse
   let tasks = await GetTasks();
-if(tasks && tasks.length > 0){
+  if (tasks && tasks.length > 0) {
     tasks.forEach((task) => {
-        console.log(task);
-        try {
-          module.exports[task.function_name](
-            task.idtask,
-            task.task_parameters,
-            UpdateTaskStatus
-          );
-        } catch (err) {
-          UpdateTaskStatus(task.idtask, -99);
-          console.error(err);
-        }
-      });
-}
+      console.log(task.function_name);
+
+      try {
+        module.exports[task.function_name](
+          task.idtask,
+          task.task_parameters
+        ).then(
+          function (response) {
+            // console.log("Success!", response);
+            UpdateTaskStatus(task.idtask, 2, response);
+          },
+          function (error) {
+            //   console.error("Failed!", error);
+            UpdateTaskStatus(task.idtask, 3, error);
+          }
+        );
+        UpdateTaskStatus(task.idtask, 1, "");
+      } catch (err) {
+        UpdateTaskStatus(task.idtask, 4, err);
+        console.error(err);
+      }
+    });
+  }
 
   //  console.log("Ya ", module.exports["fun_consulta_estado_documentos"]());
 }, 3000);
 
-async function UpdateTaskStatus(idtask, status) {
+async function UpdateTaskStatus(idtask, status, message) {
+  let data = JSON.stringify({
+    idtask: idtask,
+    status: status,
+    message: message,
+  });
   try {
     let result = await fetch(url_update_status_task, {
       method: "POST",
-      body: JSON.stringify({ idtask: idtask, status: status }),
+      body: data,
       headers: { "Content-Type": "application/json" },
     });
-    console.log('Actualiza', idtask, status);
+    //console.log("Actualiza", data);
     return await result.json();
   } catch (err) {
     console.error(err);
@@ -68,3 +99,12 @@ async function GetTasks() {
     return [];
   }
 }
+
+// Listen for dying workers
+cluster.on("exit", function (worker) {
+  // Replace the dead worker,
+  // we're not sentimental
+  UpdateTaskStatus(task.idtask, 5, "Process exit");
+  console.log("Worker %d died :(", worker.id);
+  //  cluster.fork();
+});
