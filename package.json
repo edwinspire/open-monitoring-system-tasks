@@ -1,0 +1,33 @@
+{
+  "name": "open-monitoring-system-tasks",
+  "version": "0.0.1",
+  "description": "Tasks to OMS",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edwinspire/open-monitoring-system-tasks.git"
+  },
+  "keywords": [
+    "open",
+    "monitoring",
+    "system",
+    "security",
+    "node",
+    "javascript",
+    "edwinspire"
+  ],
+  "author": "Edwin De La Cruz",
+  "license": "LGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/edwinspire/open-monitoring-system-tasks/issues"
+  },
+  "homepage": "https://github.com/edwinspire/open-monitoring-system-tasks#readme",
+  "dependencies": {
+    "node-fetch": "^2.6.0",
+    "soap": "^0.32.0"
+  }
+}
