@@ -1,11 +1,18 @@
 var cluster = require("cluster");
 const fetch = require("node-fetch");
 const path = require("path");
+const aut = require("./authentication");
+const {
+  env
+} = require("process");
 const tasks_dir = path.join(__dirname, "tasks");
 const url_update_status_task =
   "https://192.168.1.130:3000/pgapi/task/update_status";
 const url_get_tasks = "https://192.168.1.130:3000/pgapi/task/list";
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0; // Para que pase el certificado cuando no es válido
+
+process.env["OMS_USER"] = 'aaaaaaaaaaaa';
+process.env["OMS_PASSWORD"] = 'aaaaaaaaaaaaaaaaaa';
 
 // Este bloque permite convertir un error a String con JSON.stringify
 var config = {
@@ -26,7 +33,7 @@ Object.defineProperty(Error.prototype, "toJSON", config);
 require("fs")
   .readdirSync(tasks_dir)
   .forEach(function (file) {
-    console.log(file);
+    console.log('Task-> ' + file);
     module.exports[path.basename(file, ".js")] = require(path.join(
       tasks_dir,
       file
@@ -73,14 +80,23 @@ async function UpdateTaskStatus(idtask, status, message) {
     status: status,
     message: message,
   });
+  //console.log(data);
   try {
     let result = await fetch(url_update_status_task, {
       method: "POST",
       body: data,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": aut()
+      },
     });
     //console.log("Actualiza", data);
-    return await result.json();
+    if (result.status == "200") {
+      return await result.json();
+    } else {
+      console.error(result);
+      return await result.json();
+    }
   } catch (err) {
     console.error(err);
     return [];
@@ -91,9 +107,17 @@ async function GetTasks() {
   try {
     let result = await fetch(url_get_tasks, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": aut()
+      },
     });
-    return await result.json();
+    if (result.status == "200") {
+      return await result.json();
+    } else {
+      console.error(result);
+      return await result.json();
+    }
   } catch (err) {
     console.error(err);
     return [];
