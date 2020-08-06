@@ -6,10 +6,10 @@ module.exports = async function F(idtask, params) {
   return new Promise(async function (resolve, reject) {
     try {
       var movinvs = await ObtenerMovInvPendientes(params);
-      console.debug("Documentos por consultar", movinvs.length);
+      //console.debug("Documentos por consultar", movinvs.length);
       let proms = [];
 
-      if (movinvs) {
+      if (movinvs && movinvs.length > 0) {
         //console.log("movinvs.length");
         movinvs.forEach((element) => {
           let prom = ObtenerEstadoMovInv(params, element).then((status) => {
