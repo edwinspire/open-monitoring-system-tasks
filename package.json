@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/edwinspire/open-monitoring-system-tasks#readme",
   "dependencies": {
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.7",
     "soap": "^0.32.0"
   }
 }
